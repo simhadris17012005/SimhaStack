@@ -1,6 +1,7 @@
 .env
 node_modules/
 dist/
+/claude/SKILL.md
 browse/dist/
 design/dist/
 make-pdf/dist/
