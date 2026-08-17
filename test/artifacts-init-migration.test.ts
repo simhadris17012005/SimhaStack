@@ -7,7 +7,7 @@ import { mkdtempSync, writeFileSync, readFileSync, existsSync, rmSync, mkdirSync
 import { tmpdir } from 'os';
 import { join } from 'path';
 
-const REPO_ROOT = new URL('..', import.meta.url).pathname;
+const REPO_ROOT = new URL('..', import.meta.url).pathname.replace(/^\/([A-Za-z]):\//, '$1:/');
 const MIGRATION = join(REPO_ROOT, 'gstack-upgrade', 'migrations', 'v1.38.1.0.sh');
 
 function setupFakeHome(): string {
@@ -19,7 +19,7 @@ function setupFakeHome(): string {
 function runMigration(fakeHome: string): { code: number; stdout: string; stderr: string } {
   const proc = Bun.spawnSync({
     cmd: ['bash', MIGRATION],
-    env: { ...process.env, HOME: fakeHome },
+    env: { ...process.env, HOME: process.platform === 'win32' ? ('/' + fakeHome[0].toLowerCase() + fakeHome.slice(2).replace(/\\/g, '/')) : fakeHome },
     stdout: 'pipe',
     stderr: 'pipe',
   });
@@ -214,7 +214,7 @@ const MIGRATION_V1_40 = join(REPO_ROOT, 'gstack-upgrade', 'migrations', 'v1.40.0
 function runMigrationV140(fakeHome: string): { code: number; stdout: string; stderr: string } {
   const proc = Bun.spawnSync({
     cmd: ['bash', MIGRATION_V1_40],
-    env: { ...process.env, HOME: fakeHome },
+    env: { ...process.env, HOME: process.platform === 'win32' ? ('/' + fakeHome[0].toLowerCase() + fakeHome.slice(2).replace(/\\/g, '/')) : fakeHome },
     stdout: 'pipe',
     stderr: 'pipe',
   });

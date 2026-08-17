@@ -352,7 +352,7 @@ describe('runAgentSdkTest — options propagation', () => {
     // (Options.env replaces the child's entire environment).
     expect(opts.env?.ANTHROPIC_API_KEY).toBe('fake');
     expect(opts.env?.PATH).toBeTruthy();
-    expect(opts.env?.CLAUDE_CONFIG_DIR).toMatch(/\/\.claude$/);
+    expect(opts.env?.CLAUDE_CONFIG_DIR).toMatch(/[\\/]\.claude$/);
     expect(opts.env?.GSTACK_HOME).toContain('gstack-home');
     expect(opts.pathToClaudeCodeExecutable).toBe('/fake/path/claude');
   });

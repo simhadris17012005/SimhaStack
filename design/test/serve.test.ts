@@ -306,11 +306,50 @@ describe('Serve /api/reload — path traversal protection', () => {
           return (async () => {
             let body: any;
             try { body = await req.json(); } catch { return Response.json({ error: 'Invalid JSON' }, { status: 400 }); }
-            if (!body.html || !fs.existsSync(body.html)) {
-              return Response.json({ error: `HTML file not found: ${body.html}` }, { status: 400 });
-            }
-            // Production path validation — same as design/src/serve.ts
-            const resolvedReload = fs.realpathSync(path.resolve(body.html));
+                  const newHtmlPath = typeof body?.html === 'string' ? body.html : '';
+
+if (!newHtmlPath) {
+  return Response.json(
+    { error: `HTML file not found: ${newHtmlPath}` },
+    { status: 400 },
+  );
+}
+
+const lexicalReload = path.resolve(newHtmlPath);
+
+if (!lexicalReload.startsWith(allowedDir + path.sep)) {
+  return Response.json(
+    { error: `Path must be within: ${allowedDir}` },
+    { status: 403 },
+  );
+}
+
+let resolvedReload: string;
+
+try {
+  resolvedReload = fs.realpathSync(lexicalReload);
+} catch {
+  try {
+    if (fs.lstatSync(lexicalReload).isSymbolicLink()) {
+      return Response.json(
+        { error: `Path must be within: ${allowedDir}` },
+        { status: 403 },
+      );
+    }
+  } catch {}
+
+  return Response.json(
+    { error: `HTML file not found: ${newHtmlPath}` },
+    { status: 400 },
+  );
+}
+
+if (!resolvedReload.startsWith(allowedDir + path.sep)) {
+  return Response.json(
+    { error: `Path must be within: ${allowedDir}` },
+    { status: 403 },
+  );
+}      // Production path validation — same as design/src/serve.ts
             if (!resolvedReload.startsWith(allowedDir + path.sep)) {
               return Response.json({ error: `Path must be within: ${allowedDir}` }, { status: 403 });
             }

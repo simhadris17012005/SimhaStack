@@ -429,10 +429,30 @@ async function handleBoardReload(board: Board, req: Request): Promise<Response> 
     return Response.json({ error: "Invalid JSON" }, { status: 400 });
   }
   const newHtmlPath = typeof body?.html === "string" ? body.html : "";
-  if (!newHtmlPath || !fs.existsSync(newHtmlPath)) {
+  if (!newHtmlPath) {
     return Response.json({ error: `HTML file not found: ${newHtmlPath}` }, { status: 400 });
   }
-  const resolvedReload = fs.realpathSync(path.resolve(newHtmlPath));
+  const lexicalReload = path.resolve(newHtmlPath);
+  if (!lexicalReload.startsWith(board.allowedDir + path.sep)) {
+    return Response.json(
+      { error: `Path must be within: ${board.allowedDir}` },
+      { status: 403 },
+    );
+  }
+  let resolvedReload: string;
+  try {
+    resolvedReload = fs.realpathSync(lexicalReload);
+  } catch {
+    try {
+      if (fs.lstatSync(lexicalReload).isSymbolicLink()) {
+        return Response.json(
+          { error: `Path must be within: ${board.allowedDir}` },
+          { status: 403 },
+        );
+      }
+    } catch {}
+    return Response.json({ error: `HTML file not found: ${newHtmlPath}` }, { status: 400 });
+  }
   if (!resolvedReload.startsWith(board.allowedDir + path.sep)) {
     return Response.json(
       { error: `Path must be within: ${board.allowedDir}` },
